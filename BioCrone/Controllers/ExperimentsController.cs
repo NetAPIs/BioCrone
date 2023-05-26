@@ -1,5 +1,6 @@
 ﻿using BioCrone.Data;
 using BioCrone.Models;
+using BioCrone.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
@@ -11,72 +12,42 @@ namespace BioCrone.Controllers
     public class ExperimentsController : ControllerBase
     {
         private readonly DataContext _context;
+        private readonly IExperimentServices _services;
 
-        public ExperimentsController(DataContext context)
+        public ExperimentsController(DataContext context, IExperimentServices services)
         {
             _context = context;
+            _services = services;
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<Experiment>> GetAllExperiments()
         {
-            try
-            {
-                var experiments = _context.Experiments.Find(_ => true).ToList();
-                return experiments;
-            }
-            catch (MongoException ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return _services.GetAllExperiments();
         }
 
         [HttpPost]
         public async Task<IActionResult> AddExperiment(Experiment experiment)
         {
-            await _context.Experiments.InsertOneAsync(experiment);
-            return Ok(experiment);
+           return await _services.AddExperiment(experiment);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetExperiment(int id)
         {
-            var experiment = await _context.Experiments.Find(e => e.Id == id).FirstOrDefaultAsync();
-            if (experiment == null)
-            {
-                return NotFound();
-            }
-            return Ok(experiment);
+            return await _services.GetExperiment(id);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteExperiment(int id)
         {
-            var deleteResult = await _context.Experiments.DeleteOneAsync(e => e.Id == id);
-            if (deleteResult.DeletedCount == 0)
-            {
-                return NotFound();
-            }
-            return NoContent();
+            return await _services.DeleteExperiment(id);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateExperiment(int id, Experiment updatedExperiment)
         {
-            var filter = Builders<Experiment>.Filter.Eq(e => e.Id, id);
-            var update = Builders<Experiment>.Update
-                .Set(e => e.Name, updatedExperiment.Name)
-                .Set(e => e.Description, updatedExperiment.Description)
-                .Set(e => e.StartDate, updatedExperiment.StartDate)
-                .Set(e => e.EndDate, updatedExperiment.EndDate)
-                .Set(e => e.Location, updatedExperiment.Location);
-
-            var experiment = await _context.Experiments.FindOneAndUpdateAsync(filter, update);
-            if (experiment == null)
-            {
-                return NotFound();
-            }
-            return Ok(updatedExperiment);
+            return await _services.UpdateExperiment(id, updatedExperiment);
         }
     }
 }

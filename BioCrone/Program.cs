@@ -1,4 +1,5 @@
 using BioCrone.Data;
+using BioCrone.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDB"));
 builder.Services.AddSingleton<DataContext>();
+builder.Services.AddScoped<IExperimentServices, ExperimentServices>();
 
 var app = builder.Build();
 
